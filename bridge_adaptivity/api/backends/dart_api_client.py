@@ -22,7 +22,10 @@ class DartApiClient(BaseApiClient):
     @property
     def auth_request_decorator(self):
         def result(request):
-            request.headers['Authorization'] = 'Bearer {}'.format(self.content_source.o_auth_client.client_secret)
+            request.headers[
+                'Authorization'
+            ] = f'Bearer {self.content_source.o_auth_client.client_secret}'
+
             return request
         return result
 
@@ -33,7 +36,7 @@ class DartApiClient(BaseApiClient):
     def get_provider_courses(self):
         request = self.collections.get()
         data = request['data']
-        result = [
+        return [
             {
                 'course_id': collection['uid'],
                 'name': collection['title'],
@@ -41,7 +44,6 @@ class DartApiClient(BaseApiClient):
             }
             for collection in data
         ]
-        return result
 
     def get_course_blocks(self, course_id):
         request = self.collections(course_id).get()
@@ -52,11 +54,15 @@ class DartApiClient(BaseApiClient):
             content_type = asset_request['asset']['content_type']
             if content_type == 'vertical':
                 continue
-            lti_url = None
-            for data_source in asset_request['asset']['content_embed']:
-                if data_source['protocol'] == 'lti':
-                    lti_url = data_source['data']
-                    break
+            lti_url = next(
+                (
+                    data_source['data']
+                    for data_source in asset_request['asset']['content_embed']
+                    if data_source['protocol'] == 'lti'
+                ),
+                None,
+            )
+
             if not lti_url:
                 continue
             title = asset_request['asset']['title']

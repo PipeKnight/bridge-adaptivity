@@ -234,9 +234,7 @@ class ProviderTest(BridgeTestCase):
             csrf_cookie_expected_result = csrf_cookie_samsite or ''
             # Get csrf_token
             response_get = csrf_client.get(reverse('login'))
-            cookies_item = {}
-            for key, value in response_get.cookies.items():
-                cookies_item[key] = value
+            cookies_item = dict(response_get.cookies.items())
             csrftoken = cookies_item['csrftoken']
             csrftoken_id, samesite = csrftoken.coded_value, csrftoken.get('samesite')
             self.assertEqual(samesite, csrf_cookie_expected_result)

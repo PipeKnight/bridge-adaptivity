@@ -61,8 +61,7 @@ class GetCollectionForm(FormView):
     prefix = 'collection'
 
     def get_form_kwargs(self):
-        form_kw = dict(prefix=self.prefix)
-        return form_kw
+        return dict(prefix=self.prefix)
 
     def get_form(self, form_class=None):
         form = super().get_form()
@@ -99,8 +98,7 @@ class GetGradingPolicyForm(FormView):
                 collection_order_query = collection_order_query.filter(
                     grading_policy__name=self.request.GET.get('grading_policy')
                 )
-            collection_order = collection_order_query.first()
-            if collection_order:
+            if collection_order := collection_order_query.first():
                 kwargs['instance'] = collection_order.grading_policy
         return kwargs
 
@@ -186,8 +184,7 @@ class ModuleGroupShare(BaseModuleGroupView, SetUserInFormMixin, ModalFormMixin, 
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        model = context.get('object')
-        if model:
+        if model := context.get('object'):
             context['contributors'] = model.contributors.all()
         return context
 
@@ -362,8 +359,7 @@ class CollectionDetail(BaseCollectionView, DetailView):
         try:
             self.get_object()
         except Http404:
-            collection_slug = request.GET.get('collection_slug')
-            if collection_slug:
+            if collection_slug := request.GET.get('collection_slug'):
                 return redirect(reverse("module:collection-detail", kwargs={'slug': collection_slug}))
             return redirect(reverse('module:collection-list'))
         return super().get(request, *args, **kwargs)
@@ -383,8 +379,7 @@ class CollectionDetail(BaseCollectionView, DetailView):
         )
         context['activity_form'] = ActivityForm(initial={'collection': self.object})
         context['sync_available'] = self.object.collection_groups.exists()
-        engine_failure = self.request.GET.get('engine')
-        if engine_failure:
+        if engine_failure := self.request.GET.get('engine'):
             context['engine'] = engine_failure
         return context
 
@@ -453,8 +448,7 @@ class ActivityCreate(BackURLMixin, CollectionSlugToContextMixin, ModalFormMixin,
 
     def form_valid(self, form):
         form.instance.collection = Collection.objects.get(slug=self.kwargs.get('collection_slug'))
-        result = super().form_valid(form)
-        return result
+        return super().form_valid(form)
 
 
 @method_decorator(login_required, name='dispatch')
@@ -505,17 +499,14 @@ class ActivityUpdate(CollectionSlugToContextMixin, ModalFormMixin, UpdateView):
                     transaction.set_autocommit(True)
             # NOTE(AndreyLykhoman): Calculate a new activity's order
             new_order = 0
-            tmp_activity = Activity.objects.filter(
-                collection=activity.collection,
-                atype=request.POST.get("atype")
-            ).first()
-            if tmp_activity:
+            if tmp_activity := Activity.objects.filter(
+                collection=activity.collection, atype=request.POST.get("atype")
+            ).first():
                 new_order = 1 + tmp_activity.get_ordering_queryset().latest('order').order
 
             activity.atype, activity.order = request.POST.get("atype"), new_order
             activity.save()
-        result = super().post(request, *args, **kwargs)
-        return result
+        return super().post(request, *args, **kwargs)
 
 
 @method_decorator(login_required, name='dispatch')
@@ -531,7 +522,7 @@ class ActivityDelete(DeleteView):
         try:
             return super().delete(request, *args, **kwargs)
         except (ValidationError, TypeError):
-            return redirect("{}?engine=failure".format(self.get_success_url()))
+            return redirect(f"{self.get_success_url()}?engine=failure")
 
 
 class SequenceItemDetail(LtiSessionMixin, DetailView):
@@ -552,9 +543,9 @@ class SequenceItemDetail(LtiSessionMixin, DetailView):
             last_item.is_problem and
             not last_item.score
         ):
-            sequence_items = sequence_items[:len(sequence_items) - 1]
+            sequence_items = sequence_items[:-1]
         context['sequence_items'] = sequence_items
-        log.debug("Sequence Items on the page: {}".format(len(sequence_items)))
+        log.debug(f"Sequence Items on the page: {len(sequence_items)}")
 
         Log.objects.create(
             sequence_item=self.object,
@@ -634,7 +625,7 @@ def sequence_item_next(request, pk):
         position=sequence_item.position + 1
     ).first()
 
-    log.debug("Picked next sequence item is: {}".format(next_sequence_item))
+    log.debug(f"Picked next sequence item is: {next_sequence_item}")
 
     if not next_sequence_item or next_sequence_item.position == last_item:
         activity = utils.choose_activity(sequence_item)
@@ -704,11 +695,14 @@ def callback_sequence_item_grade(request):
         if not 0.0 <= score <= 1.0:
             raise InvalidLTIConfigError('[LTI] score value is outside the permitted range of 0.0-1.0')
         operation = outcome_request.operation
-        if not operation == 'replaceResult':
-            raise InvalidLTIConfigError('[LTI] request operation {} cannot be proceed'.format(operation))
+        if operation != 'replaceResult':
+            raise InvalidLTIConfigError(
+                f'[LTI] request operation {operation} cannot be proceed'
+            )
+
     except (InvalidLTIConfigError, ValueError) as err:
         body = escape(request.body) if request.body else ''
-        error_message = "Request body XML parsing error: {} {}".format(err.message, body)
+        error_message = f"Request body XML parsing error: {err.message} {body}"
         log.debug("Failure to archive grade from the source: %s" + error_message)
         outcome_response.description = escape(error_message)
         return HttpResponse(outcome_response.generate_response_xml(), content_type='application/xml')
@@ -721,19 +715,22 @@ def callback_sequence_item_grade(request):
     outcome_response.operation = operation
 
     xml = outcome_response.generate_response_xml()
-    log.debug("Received CallBack with the submitted answer for sequence item {}.".format(sequence_item_id))
+    log.debug(
+        f"Received CallBack with the submitted answer for sequence item {sequence_item_id}."
+    )
+
     try:
         sequence_item = SequenceItem.objects.get(id=sequence_item_id)
     except SequenceItem.DoesNotExist:
-        error_message = "Sequence Item with the ID={} was not found".format(sequence_item_id)
+        error_message = f"Sequence Item with the ID={sequence_item_id} was not found"
         outcome_response.description = escape(error_message)
-        log.debug("[LTI] {}".format(error_message))
+        log.debug(f"[LTI] {error_message}")
         return HttpResponseNotFound(outcome_response.generate_response_xml(), content_type='application/xml')
 
     sequence_item.score = score
     sequence_item.save()
 
-    log.debug("[LTI] Sequence item {} grade is updated".format(sequence_item))
+    log.debug(f"[LTI] Sequence item {sequence_item} grade is updated")
     last_log_submit = Log.objects.filter(sequence_item=sequence_item, log_type='S').last()
     attempt = (last_log_submit.attempt if last_log_submit else 0) + 1
     correct = bool(score)
@@ -743,9 +740,10 @@ def callback_sequence_item_grade(request):
         answer=correct,
         attempt=attempt,
     )
-    log.debug("New Log is created log_type: 'Submitted', attempt: {}, correct: {}, sequence is completed: {}".format(
-        attempt, correct, sequence_item.sequence.completed
-    ))
+    log.debug(
+        f"New Log is created log_type: 'Submitted', attempt: {attempt}, correct: {correct}, sequence is completed: {sequence_item.sequence.completed}"
+    )
+
     sequence = sequence_item.sequence
     web_socket_message_dict = _check_and_build_web_socket_message(sequence)
     CallbackSequenceConsumer.send_message_to_channel(
@@ -767,14 +765,15 @@ def sync_collection(request, slug, api_request=None):
     back_url = request.GET.get('back_url')
     collection = get_object_or_404(Collection, slug=slug)
     collection.save()
-    log.debug("Immediate sync task is created, time: {}".format(collection.updated_at))
+    log.debug(f"Immediate sync task is created, time: {collection.updated_at}")
     task = tasks.sync_collection_engines.delay(
         collection_slug=slug, created_at=collection.updated_at
     )
     if api_request:
         return task.collect(timeout=settings.CELERY_RESULT_TIMEOUT)
     return redirect(
-        reverse('module:collection-detail', kwargs={'slug': collection.slug}) + '?back_url={}'.format(back_url)
+        reverse('module:collection-detail', kwargs={'slug': collection.slug})
+        + f'?back_url={back_url}'
     )
 
 
@@ -788,9 +787,15 @@ def update_students_grades(request, collection_order_slug):
     log.debug(
         f"Task with updating students grades related to the colection_order with id {colection_order.id} is started."
     )
-    return redirect(reverse(
-        'module:group-detail', kwargs={'group_slug': colection_order.group.slug}
-    ) + '?back_url={}'.format(back_url))
+    return redirect(
+        (
+            reverse(
+                'module:group-detail',
+                kwargs={'group_slug': colection_order.group.slug},
+            )
+            + f'?back_url={back_url}'
+        )
+    )
 
 
 def preview_collection(request, slug):
@@ -851,7 +856,7 @@ def demo_collection(request, collection_order_slug):
         cache.set(settings.TEST_SEQUENCE_SUFFIX, suffix)
         test_sequence.suffix = suffix
         test_sequence.save()
-        log.debug("Sequence {} was created".format(test_sequence))
+        log.debug(f"Sequence {test_sequence} was created")
         start_activity = utils.choose_activity(sequence=test_sequence)
         if not start_activity:
             log.warning('Instructor configured empty Collection.')
@@ -870,7 +875,7 @@ def demo_collection(request, collection_order_slug):
             position=1
         )
         next_forbidden, _, _ = _check_next_forbidden(sequence_item.id)
-        context.update({"forbidden": next_forbidden})
+        context["forbidden"] = next_forbidden
     else:
         s_item_id = request.GET.get('sequence_item_id') or test_sequence.items.last().id
         log.debug(f'SequienceItem id: {s_item_id}')
@@ -882,12 +887,15 @@ def demo_collection(request, collection_order_slug):
                 sequence_item, update_activity, last_item, position,
             )
             next_forbidden, _, _ = _check_next_forbidden(sequence_item.id)
-            context.update({"forbidden": next_forbidden})
+            context["forbidden"] = next_forbidden
 
             if sequence_complete:
-                context.update(
-                    {'sequence_items': test_sequence.items.all(), 'demo': True, 'sequence_item': sequence_item}
-                )
+                context |= {
+                    'sequence_items': test_sequence.items.all(),
+                    'demo': True,
+                    'sequence_item': sequence_item,
+                }
+
                 return render(
                     request,
                     template_name='module/sequence_complete.html',
@@ -903,12 +911,13 @@ def demo_collection(request, collection_order_slug):
                     back_url=back_url,
                 )
 
-    context.update({
+    context |= {
         'sequence_item': sequence_item,
         'sequence_items': test_sequence.items.all(),
         'demo': True,
-        'position': sequence_item.position + 1
-    })
+        'position': sequence_item.position + 1,
+    }
+
     return render(
         request,
         template_name="module/sequence_item.html",

@@ -40,4 +40,4 @@ class OAuthClient(models.Model):
             raise ValidationError({'client_id': 'Client credentials need client id'})
 
     def __str__(self):
-        return '<OAuthClient: {}>'.format(self.name or self.client_id)
+        return f'<OAuthClient: {self.name or self.client_id}>'

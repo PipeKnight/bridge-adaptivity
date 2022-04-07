@@ -20,7 +20,7 @@ class TestApiBase(APITestCase):
         cls.activity = Activity.objects.create(name='act1', collection=cls.collection, tags='test')
 
     def setUp(self):
-        self.client.credentials(HTTP_AUTHORIZATION='Token ' + self.token.key)
+        self.client.credentials(HTTP_AUTHORIZATION=f'Token {self.token.key}')
 
 
 class TestCollectionAPI(TestApiBase):

@@ -56,18 +56,18 @@ class EngineVPAL(EngineInterface):
         self.base_url = urllib.parse.urljoin(self.host, self.api_url)
         self.activity_url = urllib.parse.urljoin(self.base_url, "activity")
         token = kwargs.get('TOKEN')
-        self.headers = {'Authorization': 'Token {}'.format(token)} if token else {}
+        self.headers = {'Authorization': f'Token {token}'} if token else {}
 
     @staticmethod
     def check_engine_response(request, action=None, obj=None, name=None, status=VALID_STATUSES):
         if obj and name:
-            obj += ' {}'.format(name)
+            obj += f' {name}'
         if request.status_code in status:
-            log.debug("[VPAL Engine] {} is {}.".format(obj, action))
+            log.debug(f"[VPAL Engine] {obj} is {action}.")
             return True
         else:
-            log.error("[VPAL Engine] {} is not {}.".format(obj, action))
-            log.error("[VPAL Engine] Error response: {}".format(request.text))
+            log.error(f"[VPAL Engine] {obj} is not {action}.")
+            log.error(f"[VPAL Engine] Error response: {request.text}")
             return False
 
     def fulfill_payload(self, payload=None, instance_to_parse=None, score=None):
@@ -81,7 +81,10 @@ class EngineVPAL(EngineInterface):
             if score:
                 params[-1] = 'learner'  # A hook, while VPAL is interesting in the grades on student's answers
         else:
-            raise ValueError("Payload for the instance {} cannot be prepared".format(instance_to_parse))
+            raise ValueError(
+                f"Payload for the instance {instance_to_parse} cannot be prepared"
+            )
+
         for param in params:
             if param == 'type':
                 atype = TYPES.get(getattr(instance_to_parse, 'atype'), 'generic')
@@ -122,7 +125,7 @@ class EngineVPAL(EngineInterface):
         return payload
 
     def combine_activity_url(self, activity):
-        return urllib.parse.urljoin('{}/'.format(self.activity_url), str(activity.id))
+        return urllib.parse.urljoin(f'{self.activity_url}/', str(activity.id))
 
     def select_activity(self, sequence):
         """
@@ -131,9 +134,7 @@ class EngineVPAL(EngineInterface):
         :param sequence: sequence
         :return: selected activity source_launch_url
         """
-        reco_url = urllib.parse.urljoin(
-            "{}/".format(self.activity_url), "recommend"
-        )
+        reco_url = urllib.parse.urljoin(f"{self.activity_url}/", "recommend")
         payload = {"collection": sequence.collection_order.collection.slug, "sequence": []}
         self.add_learner_to_payload(sequence, payload)
 
@@ -141,8 +142,7 @@ class EngineVPAL(EngineInterface):
             payload["sequence"].append(self.fulfill_payload(payload={}, instance_to_parse=sequence_item))
         chosen_activity = requests.post(reco_url, headers=self.headers, json=payload)
         if self.check_engine_response(chosen_activity, action="chosen", obj='activity'):
-            choose = chosen_activity.json()
-            return choose
+            return chosen_activity.json()
 
     def sync_collection_activities(self, collection):
         """
@@ -150,10 +150,15 @@ class EngineVPAL(EngineInterface):
 
         :param collection: Collection instance for synchronization
         """
-        sync_url = urllib.parse.urljoin(self.base_url, 'collection/{}/activities'.format(collection.slug))
-        payload = []
-        for activity in collection.activities.all():
-            payload.append(self.fulfill_payload(payload={}, instance_to_parse=activity))
+        sync_url = urllib.parse.urljoin(
+            self.base_url, f'collection/{collection.slug}/activities'
+        )
+
+        payload = [
+            self.fulfill_payload(payload={}, instance_to_parse=activity)
+            for activity in collection.activities.all()
+        ]
+
         sync_collection = requests.post(sync_url, json=payload, headers=self.headers)
         return self.check_engine_response(
             sync_collection, action='synchronized', obj='collection', name=collection.name

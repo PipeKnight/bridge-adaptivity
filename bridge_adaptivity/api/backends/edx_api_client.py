@@ -47,7 +47,7 @@ class OpenEdxApiClient(BaseApiClient, EdxRestApiClient):
             host_url=self.content_source.host_url,
             token_url=self.TOKEN_URL
         )
-        log.debug("Requesting oauth token: (url={})".format(url))
+        log.debug(f"Requesting oauth token: (url={url})")
         try:
             oauth_client = self.content_source.o_auth_client
             access_token, expires_at = super().get_oauth_access_token(

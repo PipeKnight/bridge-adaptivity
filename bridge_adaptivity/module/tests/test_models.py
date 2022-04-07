@@ -72,7 +72,7 @@ class TestEngineModel(TestCase):
         self.assertIsInstance(engine_mock.engine_driver, EngineMock)
         self.assertIsInstance(vpal_driver, EngineVPAL)
         self.assertEqual(vpal_driver.host, host)
-        self.assertEqual(vpal_driver.headers, {'Authorization': 'Token {}'.format(token)})
+        self.assertEqual(vpal_driver.headers, {'Authorization': f'Token {token}'})
 
 
 @ddt

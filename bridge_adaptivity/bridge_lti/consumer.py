@@ -113,7 +113,7 @@ def source_preview(request):
     source_name, source_lti_url, consumer_prams = create_lti_launch_params(request, sequence_item_id, consumer_prams)
 
     consumer_prams.update({'launch_url': source_lti_url})
-    log.debug("Sending parameters are: {}".format(consumer_prams))
+    log.debug(f"Sending parameters are: {consumer_prams}")
     consumer = ToolConsumer(**consumer_prams)
     return render(request, 'bridge_lti/content-source.html', {
         'launch_data': consumer.generate_launch_data(),

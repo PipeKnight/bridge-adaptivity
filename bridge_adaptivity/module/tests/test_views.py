@@ -26,7 +26,7 @@ class BridgeTestCase(TestCase):
     def add_prefix(self, prefix='', data=None):
         """Add prefix to form data dict, which will be send as POST or GET to view."""
         data = data or {}
-        return {"{}-{}".format(prefix, k): v for k, v in data.items()}
+        return {f"{prefix}-{k}": v for k, v in data.items()}
 
     @patch('module.tasks.sync_collection_engines.apply_async')
     def setUp(self, mock_apply_async):
@@ -106,8 +106,8 @@ class TestCollectionGroup(BridgeTestCase):
         groups_count = ModuleGroup.objects.count()
         policy_data = {'name': self.trials_count.name}
         data = {}
-        data.update(self.group_post_data)
-        data.update(policy_data)
+        data |= self.group_post_data
+        data |= policy_data
         response = self.client.post(url, data=data)
         self.assertEqual(ModuleGroup.objects.count(), groups_count + 1)
         self.assertEqual(response.status_code, 202)
@@ -274,7 +274,9 @@ class TestCollectionGroupCollectionOrder(BridgeTestCase):
         )
         response = self.client.post(url)
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(len([x for x in self.test_cg.ordered_collections]), expected_group_collection)
+        self.assertEqual(
+            len(list(self.test_cg.ordered_collections)), expected_group_collection
+        )
 
     def test_group_collection_reordered(self):
         """
@@ -314,17 +316,27 @@ class TestCollectionGroupCollectionOrder(BridgeTestCase):
         """Test that form is present in response context for both grading policies."""
         policies = GRADING_POLICIES
         for policy, _ in policies:
-            url = reverse('module:grading_policy_form', kwargs={
-                "collection_order_slug": self.collection_order1.slug
-            }) + "?grading_policy={}".format(policy)
+            url = (
+                reverse(
+                    'module:grading_policy_form',
+                    kwargs={"collection_order_slug": self.collection_order1.slug},
+                )
+                + f"?grading_policy={policy}"
+            )
+
             response = self.client.get(url)
             self.assertIn('form', response.context)
 
     def test_get_not_valid_grading_policy_form(self):
         """Check that if not correct grading policy passed - no form return."""
-        url = reverse('module:grading_policy_form', kwargs={
-            "collection_order_slug": self.collection_order1.slug
-        }) + "?grading_policy={}".format('some_policy')
+        url = (
+            reverse(
+                'module:grading_policy_form',
+                kwargs={"collection_order_slug": self.collection_order1.slug},
+            )
+            + '?grading_policy=some_policy'
+        )
+
         response = self.client.get(url)
         self.assertNotIn('form', response.context)
 
@@ -337,9 +349,12 @@ class TestBackURLMixin(BridgeTestCase):
     def test_collection_edit_back_url(self):
         """Test back_url param is added into context in collection change view."""
         url = (
-            reverse('module:collection-change', kwargs={'slug': self.collection1.slug}) +
-            '?back_url={}'.format(self.back_url)
+            reverse(
+                'module:collection-change', kwargs={'slug': self.collection1.slug}
+            )
+            + f'?back_url={self.back_url}'
         )
+
         change_response = self.client.get(url)
         self.assertIn('back_url', change_response.context)
         self.assertEqual(change_response.context['back_url'], self.back_url)
@@ -348,9 +363,12 @@ class TestBackURLMixin(BridgeTestCase):
     def test_collection_detail_back_url(self, available_course_mock):
         """Test back_url param is added into context navigation from collection detail view."""
         url_detail = (
-            reverse('module:collection-detail', kwargs={'slug': self.collection1.slug}) +
-            '?back_url={}'.format(self.back_url)
+            reverse(
+                'module:collection-detail', kwargs={'slug': self.collection1.slug}
+            )
+            + f'?back_url={self.back_url}'
         )
+
         detail_response = self.client.get(url_detail)
         self.assertIn('back_url', detail_response.context)
         self.assertEqual(detail_response.context['back_url'], self.back_url)
@@ -358,9 +376,12 @@ class TestBackURLMixin(BridgeTestCase):
     def test_collectiongroup_edit_back_url(self):
         """Test back_url param is added into context navigation from collectiongroup edit view."""
         change_url = (
-            reverse('module:group-change', kwargs={'group_slug': self.test_cg.slug}) +
-            '?back_url={}'.format(self.back_url)
+            reverse(
+                'module:group-change', kwargs={'group_slug': self.test_cg.slug}
+            )
+            + f'?back_url={self.back_url}'
         )
+
         change_response = self.client.get(change_url)
         self.assertIn('back_url', change_response.context)
         self.assertEqual(change_response.context['back_url'], self.back_url)
@@ -368,9 +389,12 @@ class TestBackURLMixin(BridgeTestCase):
     def test_collectiongroup_detail_back_url(self):
         """Test back_url param is added into context navigation from collectiongroup detail view."""
         url = (
-            reverse('module:group-detail', kwargs={'group_slug': self.test_cg.slug}) +
-            '?back_url={}'.format(self.back_url)
+            reverse(
+                'module:group-detail', kwargs={'group_slug': self.test_cg.slug}
+            )
+            + f'?back_url={self.back_url}'
         )
+
         detail_response = self.client.get(url)
         self.assertIn('back_url', detail_response.context)
         self.assertEqual(detail_response.context['back_url'], self.back_url)

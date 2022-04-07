@@ -52,7 +52,7 @@ ALLOWED_HOSTS = secure.ALLOWED_HOSTS
 AMQP_PASS = secure.AMQP_PASS
 AMQP_USER = secure.AMQP_USER
 
-CELERY_BROKER_URL = 'amqp://{}:{}@rabbit//'.format(AMQP_USER, AMQP_PASS)
+CELERY_BROKER_URL = f'amqp://{AMQP_USER}:{AMQP_PASS}@rabbit//'
 
 # Logging settings
 LOGGING = {
@@ -61,14 +61,14 @@ LOGGING = {
     'formatters': {
         'standard': {
             'format': "[%(asctime)s] %(levelname)s [%(name)s:%(lineno)s] %(message)s",
-            'datefmt': "%d/%b/%Y %H:%M:%S"
+            'datefmt': "%d/%b/%Y %H:%M:%S",
         },
     },
     'handlers': {
         'logfile': {
             'level': 'DEBUG',
             'class': 'logging.handlers.RotatingFileHandler',
-            'filename': SITE_ROOT + "/dev.log",
+            'filename': f'{SITE_ROOT}/dev.log',
             'maxBytes': 50000,
             'backupCount': 2,
             'formatter': 'standard',
@@ -76,7 +76,7 @@ LOGGING = {
         'console': {
             'level': 'DEBUG',
             'class': 'logging.StreamHandler',
-            'formatter': 'standard'
+            'formatter': 'standard',
         },
     },
     'loggers': {
@@ -90,14 +90,17 @@ LOGGING = {
             'level': 'INFO',
             'propagate': False,
         },
-    }
+    },
 }
+
 APPS_TO_LOG = ['api', 'bridge_lti', 'config', 'module', 'provider']
-APP_LOGGERS = {}
-for app in APPS_TO_LOG:
-    APP_LOGGERS[app] = {
+APP_LOGGERS = {
+    app: {
         'handlers': ['console', 'logfile'],
         'level': 'DEBUG',
         'propagate': True,
     }
+    for app in APPS_TO_LOG
+}
+
 LOGGING['loggers'].update(APP_LOGGERS)

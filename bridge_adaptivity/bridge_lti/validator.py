@@ -62,7 +62,7 @@ class SignatureValidator(RequestValidator):
 
         log.debug('Timestamp validating is started.')
         ts = int(timestamp)
-        ts_key = '{}_ts'.format(client_key)
+        ts_key = f'{client_key}_ts'
         cache_ts = self.cache.get(ts_key, ts)
         if cache_ts > ts:
             log.debug(msg.format('timestamp'))
@@ -88,7 +88,7 @@ class SignatureValidator(RequestValidator):
         try:
             self.lti_content_source = LtiLmsPlatform.objects.get(consumer_key=client_key)
         except LtiLmsPlatform.DoesNotExist:
-            log.exception('Consumer with the key {} is not found.'.format(client_key))
+            log.exception(f'Consumer with the key {client_key} is not found.')
             return False
         return True
 
