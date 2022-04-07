@@ -109,8 +109,9 @@ class ThresholdGradingPolicyForm(ModelForm):
     def clean(self):
         super().clean()
         policy_name, params = self.cleaned_data.get('name'), self.cleaned_data.get('params')
-        required_params = GRADING_POLICY_NAME_TO_CLS.get(policy_name).require.get('params')
-        if required_params:
+        if required_params := GRADING_POLICY_NAME_TO_CLS.get(
+            policy_name
+        ).require.get('params'):
             if params is None:
                 params = self.cleaned_data['params'] = {}
             for param, default in required_params.items():
@@ -187,9 +188,8 @@ class CollectionOrderForm(ModelForm):
 
         if required_engine and not isinstance(engine_cls, required_engine):
             engine_err_msg = 'This Engine doesn\'t support chosen Policy. Please choose another policy or engine.'
-            policy_err_msg = 'This policy can be used only with {} engine(s). Choose another policy or engine.'.format(
-                ", ".join([engine.__name__.strip('Engine') for engine in required_engine])
-            )
+            policy_err_msg = f"""This policy can be used only with {", ".join([engine.__name__.strip('Engine') for engine in required_engine])} engine(s). Choose another policy or engine."""
+
             raise forms.ValidationError({'engine': [engine_err_msg], 'grading_policy_name': [policy_err_msg]})
         return self.cleaned_data
 

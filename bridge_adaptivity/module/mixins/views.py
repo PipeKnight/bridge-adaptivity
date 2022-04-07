@@ -25,7 +25,7 @@ class CollectionSlugToContextMixin(object):
         try:
             return super().form_valid(form)
         except (ValidationError, TypeError):
-            return redirect("{}?engine=failure".format(self.get_success_url()))
+            return redirect(f"{self.get_success_url()}?engine=failure")
 
 
 class LtiSessionMixin(object):
@@ -41,10 +41,9 @@ class LtiSessionMixin(object):
             if request.session.get('Lti_strict_forward'):
                 request.session['Lti_update_activity'] = True
                 log.debug(
-                    "[StrictForward] Session is changed, activity update could be required: {}".format(
-                        request.session['Lti_update_activity']
-                    )
+                    f"[StrictForward] Session is changed, activity update could be required: {request.session['Lti_update_activity']}"
                 )
+
         return super().dispatch(request, *args, **kwargs)
 
 
@@ -62,7 +61,7 @@ class BaseEditFormMixin:
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         form_kw = getattr(self, self.extra_form_kw_method)()
-        post_or_none = self.request.POST if self.request.POST else None
+        post_or_none = self.request.POST or None
         context[self.extra_form_context_string] = self.extra_form_class(post_or_none, **form_kw)
         return context
 
@@ -90,7 +89,7 @@ class CollectionOrderEditFormMixin:
             grading_policy = grading_policy_form.save()
             form.cleaned_data['grading_policy'] = grading_policy
             form_kw = self.get_extra_form_kwargs(self.collection_prefix, "collection")
-            post_or_none = self.request.POST if self.request.POST else None
+            post_or_none = self.request.POST or None
             collection_form = BaseCollectionForm(post_or_none, **form_kw)
 
             if collection_form.is_valid():
@@ -111,7 +110,7 @@ class CollectionOrderEditFormMixin:
     def get_context_data(self, **kwargs):
         data = super().get_context_data(**kwargs)
         form_kw = self.get_extra_form_kwargs(self.grading_prefix, "grading_policy")
-        post_or_none = self.request.POST if self.request.POST else None
+        post_or_none = self.request.POST or None
         data['grading_policy_form'] = BaseGradingPolicyForm(post_or_none, **form_kw)
         form_kw = self.get_extra_form_kwargs(self.collection_prefix, "collection")
         data['collection_form'] = BaseCollectionForm(post_or_none, **form_kw)
@@ -158,8 +157,7 @@ class OnlyMyObjectsMixin(object):
         return result_query
 
     def _filter_resourses(self, qs):
-        slug = self.kwargs.get(self.slug_url_kwarg)
-        if slug:
+        if slug := self.kwargs.get(self.slug_url_kwarg):
             slug_field = self.get_slug_field()
             qs = qs.filter(**{slug_field: slug})
         return qs
@@ -168,8 +166,7 @@ class OnlyMyObjectsMixin(object):
 class BackURLMixin(object):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        back_url = self.request.GET.get('back_url')
-        if back_url:
+        if back_url := self.request.GET.get('back_url'):
             context['back_url'] = back_url
         return context
 
