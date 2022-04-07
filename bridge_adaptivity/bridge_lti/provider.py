@@ -22,7 +22,7 @@ log = logging.getLogger(__name__)
 
 
 def _error_msg(s):
-    return "LTI: provided wrong consumer {}.".format(s)
+    return f"LTI: provided wrong consumer {s}."
 
 
 def get_tool_provider_for_lti(request):
@@ -37,7 +37,7 @@ def get_tool_provider_for_lti(request):
         if tool_provider.is_valid_request(validator):
             return tool_provider
     except (oauth1.OAuth1Error, InvalidLTIRequestError, ValueError) as err:
-        log.error('Error happened while LTI request: {}'.format(err.__str__()))
+        log.error(f'Error happened while LTI request: {err.__str__()}')
     return None
 
 
@@ -115,12 +115,11 @@ def create_sequence_item(request, sequence, start_activity, tool_provider, lti_l
         sequence.outcome_service = outcomes
         sequence.save()
 
-    sequence_item = SequenceItem.objects.create(
+    return SequenceItem.objects.create(
         sequence=sequence,
         activity=start_activity,
         position=1,
     )
-    return sequence_item
 
 
 def learner_flow(request, lti_lms_platform, tool_provider, collection_order_slug=None, unique_marker=''):
@@ -136,7 +135,10 @@ def learner_flow(request, lti_lms_platform, tool_provider, collection_order_slug
         lti_lms_platform=lti_lms_platform,
         defaults={'course_id': request.POST['context_id']}
     )
-    log.debug("LTI user {}: user_id='{}'".format('created' if created else 'picked', lti_user.user_id))
+    log.debug(
+        f"LTI user {'created' if created else 'picked'}: user_id='{lti_user.user_id}'"
+    )
+
 
     sequence, created = Sequence.objects.get_or_create(
         lti_user=lti_user,
@@ -152,11 +154,11 @@ def learner_flow(request, lti_lms_platform, tool_provider, collection_order_slug
     request.session['Lti_strict_forward'] = strict_forward
 
     if sequence.completed:
-        log.debug("Sequence {} is already completed".format(sequence.id))
+        log.debug(f"Sequence {sequence.id} is already completed")
         return redirect(reverse('module:sequence-complete', kwargs={'pk': sequence.id}))
 
     if created:
-        log.debug("Sequence {} was created".format(sequence))
+        log.debug(f"Sequence {sequence} was created")
         start_activity = module_utils.choose_activity(sequence=sequence)
         if not start_activity:
             log.warning('Instructor configured empty Collection.')

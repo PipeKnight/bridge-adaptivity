@@ -32,7 +32,7 @@ def stub_page(
     Render stub page, announcement page is default.
     """
     context = {'title': title, 'message': message, 'tip': tip}
-    context.update(kwargs)
+    context |= kwargs
     return render(
         request,
         template_name="bridge_lti/announcement.html",

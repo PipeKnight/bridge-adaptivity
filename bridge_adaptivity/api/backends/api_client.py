@@ -39,9 +39,7 @@ def get_active_content_sources(request, source_ids=None, not_allow_empty_source_
         # if source_id is not provided and more than one active content_provider
         raise HttpClientError(_("Parameter source_id is mandatory if there's more than one active content source."))
 
-    content_sources = get_content_providers(request, source_ids=source_ids)
-
-    return content_sources
+    return get_content_providers(request, source_ids=source_ids)
 
 
 def get_available_blocks(request, source_id, course_id=''):
@@ -163,7 +161,8 @@ def get_content_providers(request, source_ids=None):
         else:
             q_kw['id'] = source_ids
     content_source = LtiContentSource.objects.filter(**q_kw)
-    log.debug('Picked content Source(s){}: {}'.format(
-        " with content_source_id={}".format(source_ids),
-        ", ".join(content_source.values_list('name', flat=True))))
+    log.debug(
+        f"""Picked content Source(s) with content_source_id={source_ids}: {", ".join(content_source.values_list('name', flat=True))}"""
+    )
+
     return content_source

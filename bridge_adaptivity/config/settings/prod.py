@@ -2,6 +2,7 @@
 docker-compose deployment on production machine
 """
 
+
 # flake8: noqa: F405
 from .base import *  # noqa: F401,F403
 
@@ -17,7 +18,7 @@ BRIDGE_HOST = secure.BRIDGE_HOST
 AMQP_PASS = secure.AMQP_PASS
 AMQP_USER = secure.AMQP_USER
 
-CELERY_BROKER_URL = 'amqp://{}:{}@rabbit//'.format(AMQP_USER, AMQP_PASS)
+CELERY_BROKER_URL = f'amqp://{AMQP_USER}:{AMQP_PASS}@rabbit//'
 
 LOGGING = {
     'version': 1,
@@ -30,11 +31,8 @@ LOGGING = {
         'logfile': {
             'level': 'WARNING',
             'class': 'logging.handlers.RotatingFileHandler',
-            'filename': BASE_DIR + "/bridge-error.log",
+            'filename': f'{BASE_DIR}/bridge-error.log',
         },
     },
-    'root': {
-        'level': 'INFO',
-        'handlers': ['console', 'logfile']
-    },
+    'root': {'level': 'INFO', 'handlers': ['console', 'logfile']},
 }

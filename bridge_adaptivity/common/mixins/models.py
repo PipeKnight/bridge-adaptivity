@@ -16,8 +16,9 @@ class ModelFieldIsDefaultMixin(object):
 
     def save(self, *args, **kwargs):
         if getattr(self, self.IS_DEFAULT_FIELD, None):
-            default_qs = self.__class__.objects.filter(**{self.IS_DEFAULT_FIELD: True})
-            if default_qs:
+            if default_qs := self.__class__.objects.filter(
+                **{self.IS_DEFAULT_FIELD: True}
+            ):
                 default_qs.update(**{self.IS_DEFAULT_FIELD: False})
         return super().save(*args, **kwargs)
 

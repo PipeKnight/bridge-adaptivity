@@ -114,7 +114,7 @@ def sync_collection(request, slug):
     try:
         result = [v for obj, v in module_views.sync_collection(request, slug, api_request=True)]
     except TimeoutError:
-        log.debug(f"The Collection sync task failed because of timeout error.")
+        log.debug("The Collection sync task failed because of timeout error.")
         return HttpResponseBadRequest(reason="Collection sync was failed, the reason is: TimeoutError")
     log.debug(f"The result of the sync task is: {result}")
     return JsonResponse(data={'engines': result})

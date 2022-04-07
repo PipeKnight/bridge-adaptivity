@@ -22,14 +22,13 @@ class BaseApiClient(slumber.API):
 
         Result list item has next structure: {block_id, display_name, lti_url, type}
         """
-        resource = self.blocks.get(
+        return self.blocks.get(
             course_id=course_id,
             all_blocks=True,
             depth='all',
             requested_fields='lti_url,visible_to_staff_only',
-            return_type='list'
+            return_type='list',
         )
-        return resource
 
     def get_provider_courses(self):
         """

@@ -34,7 +34,7 @@ class LtiLmsPlatform(models.Model):
         verbose_name_plural = "LMS Platforms"
 
     def __str__(self):
-        return '<LtiLmsPlatform: {}>'.format(self.consumer_name)
+        return f'<LtiLmsPlatform: {self.consumer_name}>'
 
 
 class LtiContentSource(models.Model):
@@ -69,7 +69,7 @@ class LtiContentSource(models.Model):
         verbose_name_plural = "Content Sources"
 
     def __str__(self):
-        return '<LtiContentSource: {}>'.format(self.name or self.provider_key)
+        return f'<LtiContentSource: {self.name or self.provider_key}>'
 
     def clean(self):
         """
@@ -103,7 +103,7 @@ class LtiUser(models.Model):
         unique_together = ('lti_lms_platform', 'user_id')
 
     def __str__(self):
-        return '<LtiUser: {}>'.format(self.user_id)
+        return f'<LtiUser: {self.user_id}>'
 
 
 class BridgeUser(AbstractUser):
@@ -124,7 +124,7 @@ class BridgeUser(AbstractUser):
         verbose_name_plural = _('bridge users')
 
     def __str__(self):
-        return '<BridgeUser: {}>'.format(self.username)
+        return f'<BridgeUser: {self.username}>'
 
     def login(self, request):
         """
@@ -164,4 +164,4 @@ class OutcomeService(models.Model):
         verbose_name_plural = _('outcome services')
 
     def __str__(self):
-        return '<OutcomeService: {}>'.format(self.lis_outcome_service_url)
+        return f'<OutcomeService: {self.lis_outcome_service_url}>'

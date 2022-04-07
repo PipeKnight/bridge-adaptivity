@@ -96,8 +96,9 @@ class TestVPALEngine(TestCase):
         launch_params = {lti_param: "test_lis_person_sourcedid"}
         self.sequence.fulfil_sequence_metadata(self.engine.lti_params, launch_params)
         test_url = urllib.parse.urljoin(
-            "{}/".format(self.engine.engine_driver.activity_url), "recommend"
+            f"{self.engine.engine_driver.activity_url}/", "recommend"
         )
+
         expected_payload = {
             "learner": {
                 'user_id': self.sequence.lti_user.user_id,
@@ -145,8 +146,9 @@ class TestVPALEngine(TestCase):
         }
         self.sequence.fulfil_sequence_metadata(self.engine.lti_params, launch_params)
         test_url = urllib.parse.urljoin(
-            "{}/".format(self.engine.engine_driver.activity_url), "recommend"
+            f"{self.engine.engine_driver.activity_url}/", "recommend"
         )
+
         expected_payload = {
             "learner": {
                 'user_id': self.sequence.lti_user.user_id,
@@ -185,8 +187,9 @@ class TestVPALEngine(TestCase):
         """
         expected_source_url = 'very_new_activity_source_url'
         test_url = urllib.parse.urljoin(
-            "{}/".format(self.engine.engine_driver.activity_url), "recommend"
+            f"{self.engine.engine_driver.activity_url}/", "recommend"
         )
+
         expected_payload = {
             "learner": {
                 'user_id': self.sequence.lti_user.user_id,

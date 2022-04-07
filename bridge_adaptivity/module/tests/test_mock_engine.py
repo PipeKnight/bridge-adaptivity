@@ -75,9 +75,15 @@ class TestMockEngine(TestCase):
         for i, activity in enumerate(activities):
             _activity = activity.copy()
             _activity['source_launch_url'] = activity['source_launch_url'].format(i)
-            created_activities.append(Activity.objects.create(
-                name='test_{}'.format(i), collection=self.collection1, tags='test', **_activity
-            ))
+            created_activities.append(
+                Activity.objects.create(
+                    name=f'test_{i}',
+                    collection=self.collection1,
+                    tags='test',
+                    **_activity,
+                )
+            )
+
 
         source_launch_urls = Activity.objects.values_list('source_launch_url', flat=True)
 

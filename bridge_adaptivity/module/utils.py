@@ -47,7 +47,7 @@ def select_next_sequence_item(sequence_item, update_activity, last_item, positio
         position=position
     ).first()
 
-    log.debug("Picked next sequence item is: {}".format(next_sequence_item))
+    log.debug(f"Picked next sequence item is: {next_sequence_item}")
 
     if not next_sequence_item or next_sequence_item.position == last_item:
         activity = choose_activity(sequence_item)
