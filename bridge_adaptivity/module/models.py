@@ -25,13 +25,15 @@ log = logging.getLogger(__name__)
 
 
 def _discover_applicable_modules(folder_name='engines', file_startswith='engine_'):
-    modules = []
-    for name in os.listdir(os.path.join(
-        os.path.dirname(os.path.abspath(__file__)), folder_name
-    )):
-        if name.startswith(file_startswith) and name.endswith('.py'):
-            modules.append((name[:-len('.py')], name[len(file_startswith):-len('.py')]))
-    return modules
+    return [
+        (name[: -len('.py')], name[len(file_startswith) : -len('.py')])
+        for name in os.listdir(
+            os.path.join(
+                os.path.dirname(os.path.abspath(__file__)), folder_name
+            )
+        )
+        if name.startswith(file_startswith) and name.endswith('.py')
+    ]
 
 
 def _load_cls_from_applicable_module(module_path, mod_name, class_startswith=None, class_endswith=None):
@@ -40,9 +42,9 @@ def _load_cls_from_applicable_module(module_path, mod_name, class_startswith=Non
     """
     module = None
     try:
-        cls_module = importlib.import_module('{}.{}'.format(module_path, mod_name))
+        cls_module = importlib.import_module(f'{module_path}.{mod_name}')
     except ImportError:
-        log.error("Could not load module_path={}, mod_name={}".format(module_path, mod_name))
+        log.error(f"Could not load module_path={module_path}, mod_name={mod_name}")
         raise
     for attr in inspect.getmembers(cls_module):
         if class_endswith and attr[0].endswith(class_endswith):
@@ -90,7 +92,7 @@ class Sequence(models.Model):
         unique_together = ('lti_user', 'collection_order', 'suffix')
 
     def __str__(self):
-        return '<Sequence[{}]: {}>'.format(self.id, self.lti_user)
+        return f'<Sequence[{self.id}]: {self.lti_user}>'
 
     def fulfil_sequence_metadata(self, lti_params, launch_params):
         """
@@ -99,11 +101,11 @@ class Sequence(models.Model):
         :param lti_params: iterable object with the required lti parameters names
         :param launch_params: dict with the launch lti parameters received in launch lti request
         """
-        meta_dict = {}
-        for param in lti_params:
-            if param in launch_params:
-                meta_dict[param] = launch_params[param]
-        if meta_dict:
+        if meta_dict := {
+            param: launch_params[param]
+            for param in lti_params
+            if param in launch_params
+        }:
             self.metadata = meta_dict
             self.save()
 
@@ -162,7 +164,7 @@ class SequenceItem(models.Model):
         ordering = ['sequence', 'position']
 
     def __str__(self):
-        return '<SequenceItem: {}={}>'.format(self.sequence, self.activity.name)
+        return f'<SequenceItem: {self.sequence}={self.activity.name}>'
 
     def _add_suffix(self):
         """
@@ -179,9 +181,10 @@ class SequenceItem(models.Model):
         if self.score != self.__origin_score:
             engine = self.sequence.collection_order.engine.engine_driver
             engine.submit_activity_answer(self)
-            log.debug("Adaptive engine is updated with the grade for the {} activity in the SequenceItem {}".format(
-                self.activity.name, self.id
-            ))
+            log.debug(
+                f"Adaptive engine is updated with the grade for the {self.activity.name} activity in the SequenceItem {self.id}"
+            )
+
         if self.activity.repetition > 1:
             self._add_suffix()
         self.is_problem = self.activity.is_problem
@@ -217,10 +220,7 @@ class GradingPolicy(ModelFieldIsDefaultMixin, models.Model):
         return policy.grade
 
     def __str__(self):
-        return "{}, public_name: {} params: {}{}".format(
-            self.name, self.public_name, self.params,
-            ", IS DEFAULT POLICY" if self.is_default else ""
-        )
+        return f'{self.name}, public_name: {self.public_name} params: {self.params}{", IS DEFAULT POLICY" if self.is_default else ""}'
 
 
 class Collection(models.Model):
@@ -242,7 +242,7 @@ class Collection(models.Model):
         unique_together = ('owner', 'name')
 
     def __str__(self):
-        return '<Collection: {}>'.format(self.name)
+        return f'<Collection: {self.name}>'
 
     def save(self, *args, **kwargs):
         """Extension cover method with logging."""
@@ -289,7 +289,7 @@ class Engine(ModelFieldIsDefaultMixin, models.Model):
         unique_together = ('host', 'token')
 
     def __str__(self):
-        return "Engine: {}".format(self.engine_name)
+        return f"Engine: {self.engine_name}"
 
     @classmethod
     def create_default(cls):
@@ -383,7 +383,7 @@ class ModuleGroup(models.Model):
         )
 
     def __str__(self):
-        return "<Group of Collections: {}>".format(self.name)
+        return f"<Group of Collections: {self.name}>"
 
     def get_absolute_url(self):
         return reverse('module:group-detail', kwargs={'group_slug': self.slug})
@@ -461,15 +461,14 @@ class Activity(OrderedModel):
         ordering = 'atype', 'order'
 
     def __str__(self):
-        return '<Activity: {}>'.format(self.name)
+        return f'<Activity: {self.name}>'
 
     def get_absolute_url(self):
         return reverse('module:collection-detail', kwargs={'slug': self.collection.slug})
 
     def save(self, *args, **kwargs):
         """Extension which sends notification to the Adaptive engine that Activity is created/updated."""
-        initial_id = self.id
-        if initial_id:
+        if initial_id := self.id:
             Log.objects.create(
                 log_type=Log.ADMIN, action=Log.ACTIVITY_UPDATED,
                 data=self.get_research_data()
@@ -544,17 +543,9 @@ class Log(models.Model):
 
     def __str__(self):
         if self.log_type == self.OPENED:
-            return '<Log[{}]: {}>'.format(self.get_log_type_display(), self.sequence_item)
+            return f'<Log[{self.get_log_type_display()}]: {self.sequence_item}>'
         elif self.log_type == self.ADMIN:
-            return '<Log[{}]: {} ({})>'.format(
-                self.get_log_type_display(),
-                self.get_action_display(),
-                self.data
-            )
+            return f'<Log[{self.get_log_type_display()}]: {self.get_action_display()} ({self.data})>'
+
         else:
-            return '<Log[{}]: {}-{}[{}]>'.format(
-                self.get_log_type_display(),
-                self.sequence_item,
-                self.answer,
-                self.attempt
-            )
+            return f'<Log[{self.get_log_type_display()}]: {self.sequence_item}-{self.answer}[{self.attempt}]>'
